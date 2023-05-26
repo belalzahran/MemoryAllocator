@@ -3,6 +3,23 @@
 
 /* Helper function definitions go here */
 
+void toggle_allocated_bit(void *block_header_or_footer) 
+{
+    uint64_t *block_size_ptr = (uint64_t *)block_header_or_footer;
+
+    // Check if the last bit of block_size is 1 or 0
+    uint64_t last_bit = *block_size_ptr & 0x1;
+    
+    if (last_bit == 1) {
+        // If last bit is 1, set it to 0
+        printf("Allocated bit set from 1 to 0\n");
+        *block_size_ptr &= ~0x1;
+    } else {
+        // If last bit is 0, set it to 1
+        printf("Allocated bit set from 0 to 1\n");
+        *block_size_ptr |= 0x1;
+    }
+}
 
 bool isAligned(void* ptr, int alignmentNum)
 {
@@ -53,7 +70,7 @@ void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist
     prologue->block_size = 0;
     prologue->requested_size = 0;
     // printf("Setting allocated bit of the Eplilogue to 1...");
-    prologue->block_size |= 0x1;
+    toggle_allocated_bit((void*)prologue);
     // printf("Set!\n");
 
     // printf("Initialized!\n");
@@ -91,7 +108,7 @@ void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist
     epilogue->block_size = 0;
     epilogue->requested_size = 0;
     // printf("Setting allocated bit of the Eplilogue to 1...");
-    epilogue->block_size |= 0x1;
+    toggle_allocated_bit((void*)epilogue);
     // printf("Set!\n");
 
     // printf("\n\n\nTHE END OF THE HEAP ADDRESS(getbrk):        %p\n", ics_get_brk());
@@ -139,10 +156,11 @@ void removeFromFreeList(ics_free_header **freelist_head, ics_free_header *block_
             current_block->next = NULL;
             current_block->prev = NULL;
 
-            current_block->header.block_size &= ~0x1;
+            // set the removed block to allocated once taking it from the free linked list
+            toggle_allocated_bit(&(current_block->header));
+        
             ics_footer* current_footer = (ics_footer*)((char*)current_block + current_block->header.block_size - sizeof(ics_footer));
-            current_footer->block_size &= ~0x1;
-
+            toggle_allocated_bit(current_footer);
 
             return;
         }
@@ -199,6 +217,7 @@ void* getNextFit(size_t size, ics_free_header **freelist_head, ics_free_header *
  // make sure that last node in free list points back to head
 void insertIntoFreeList(ics_free_header **freelist_head, ics_free_header *block) {
     // If the free list is currently empty
+    toggle_allocated_bit((void*)block);
     if (*freelist_head == NULL) {
         // Set the freelist_head and freelist_next to the new block
         *freelist_head = block;
@@ -232,16 +251,28 @@ void insertIntoFreeList(ics_free_header **freelist_head, ics_free_header *block)
 
 
 
-// splitAndPrepFreeBlock(size_t size, ics_free_header* header)
-// {
+void splitAndPrepFreeBlock(size_t size, ics_free_header* bigFreeHeader)
+{
 
-//     // get the size we are going to split w
+      // get the size we are going to split w
 
-//     // update the header of block to be allocated
-//     // add a footer for the block to be allocated
-//     // make sure the blockto be allocated is last bit set to one
+    size_t potentialBlockSize = getAlignedPayloadSize(size) + 16;
 
-//     // add a new ics free header to the remaining free space of the heap
-//     // insert back into the free list and set the allocated bits back to free
+    printf("HSHFJDLS:KFJ:LDFJK:LDSJF:DKSF\n\n\n");
 
-// }
+
+
+
+    ics_header_print((void*)bigFreeHeader);
+
+  
+
+    // update the header of block to be allocated
+
+
+    // add a footer for the block to be allocated
+
+    // add a new ics free header to the remaining free space of the heap
+    // insert back into the free list and set the allocated bits back to free
+
+}

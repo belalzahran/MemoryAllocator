@@ -57,17 +57,13 @@ void *ics_malloc(size_t size) {
         prepareNewPage(&freelist_head, &freelist_next);
         printf("page added!\n");
         //ics_header_print(&(freelist_head->header));
-        ics_freelist_print();
+        //ics_freelist_print();
 
         printf("The page is set up and we are preparing to allocate the block...\n");
         ics_free_header* blockToSplit = (ics_free_header*)getNextFit(size, &freelist_head, &freelist_next);
-        size_t potentialBlockSize = getAlignedPayloadSize(size) + 16;
-
-        ics_freelist_print();
-
-        ics_header_print(blockToSplit);
-
-        // splitFreeBlock()
+        //ics_freelist_print();
+        //ics_header_print(blockToSplit);
+        splitAndPrepFreeBlock(size, blockToSplit);
 
 
 
