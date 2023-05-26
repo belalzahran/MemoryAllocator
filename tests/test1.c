@@ -50,10 +50,10 @@ int main(int argc, char *argv[]) {
   // Test #1: Allocate an integer
   //int *value1 = ics_malloc(sizeof(int));
 int *value1 = ics_malloc(15);
-  // null_check(value1, sizeof(int));
-  // payload_check(value1);
-  // ics_payload_print((void*)value1);
-  // press_to_cont();
+  null_check(value1, sizeof(int));
+  payload_check(value1);
+  ics_payload_print((void*)value1);
+  //press_to_cont();
 
   // // Now assign a value
   // printf("=== Test2: Assignment test ===\n");

@@ -62,24 +62,18 @@ void *ics_malloc(size_t size) {
         //ics_freelist_print();
         printf("The page is set up and we are preparing to allocate the block...\n");
         ics_free_header* blockToSplit = (ics_free_header*)getNextFit(size, &freelist_head, &freelist_next);
+        printf("block split\n");
         // ics_freelist_print();
         // ics_header_print(blockToSplit);
         // printf("block to split:");
         // is_allocated((void*)blockToSplit);
-        splitAndPrepFreeBlock(size, (ics_header*)blockToSplit);
+        // ics_payload_print(splitAndPrepFreeBlock(size,(ics_header*)blockToSplit));
+        // printf("HELLLo");
 
+        return splitAndPrepFreeBlock(size,(ics_header*)blockToSplit);
 
+    // }
 
-
-
-        
-
-
-
-
-        
-
-        
 
 
     // }

@@ -320,13 +320,13 @@ void insertIntoFreeList(ics_free_header **freelist_head, ics_free_header **freel
 
 
 
-void splitAndPrepFreeBlock(size_t size, ics_header* bigFreeHeader)
+void* splitAndPrepFreeBlock(size_t size, ics_header* bigFreeHeader)
 {
 
     size_t prevBlockSize = bigFreeHeader->block_size;
     
 
-    printf("start of heap %p\n",(void*)bigFreeHeader);
+    // printf("start of heap %p\n",(void*)bigFreeHeader);
       // get the size we are going to split w
 
     size_t potentialBlockSize = getAlignedPayloadSize(size) + 16;
@@ -354,69 +354,25 @@ void splitAndPrepFreeBlock(size_t size, ics_header* bigFreeHeader)
 
     toggle_allocated_bit(newBigFreeHeader,"new big free header", 0);
 
-    
-    // ics_footer* newBigFreeFooter = (ics_footer*) (((void*)newBigFreeHeader) + (newBigFreeHeader->header.block_size) - 8);
-    // newBigFreeFooter->block_size = newBigFreeHeader->header.block_size;
-    // newBigFreeFooter->fid = FOOTER_MAGIC;
-    // newBigFreeFooter->requested_size = 0;
-
-    ics_header_print((void*)updatedHeader);
-    ics_header_print((void*)newBigFreeHeader);
 
     ics_footer* newBigFreeFooter = (ics_footer*) (((void*)newBigFreeHeader) + newBigFreeHeader->header.block_size - 8);
     newBigFreeFooter->block_size = prevBlockSize - potentialBlockSize;
     toggle_allocated_bit(newBigFreeFooter,"new big free footer", 0);
+        ics_header_print((void*)updatedHeader);
+    ics_header_print((void*)newBigFreeHeader);
 
-     insertIntoFreeList(&freelist_head, &freelist_next, newBigFreeHeader);
+    insertIntoFreeList(&freelist_head, &freelist_next, newBigFreeHeader);
 
-    //  ics_header_print((void*)updatedHeader);
-    // ics_header_print((void*)newBigFreeHeader);
-
-
-
-
-
-    // ics_header_print((void*)newBigFreeFooter);
-
-    // printf("new big free ehader block size: %x\n",newBigFreeHeader->header.block_size);
-    // printf("prevBlock size: %ld\n", prevBlockSize);
-    // printf("potential block size size: %ld\n", potentialBlockSize);
-    // printf("newfreeblocksize size: %ld\n", newFreeBlockSize);
-    // printf("address of udpated header : %p\n", (void*)updatedHeader);
-
-    // printf("address of new footer : %p\n", (void*)newFooter);
-    // printf("address of new footer + 8: %p\n",  ((void*)newFooter + 8));
+    // casting for return value and checking for alignment
+    // ics_free_header* retVal = (ics_free_header*) updatedHeader;
+    //isAligned((void*)(retVal->next),16);
+    // printf("retval address: %p\n",&(((ics_free_header*) updatedHeader)->next));
 
 
-    // printf("address of new big free header : %p\n", (void*)newBigFreeHeader);
-    // printf("prevBlock size: %ld\n", prevBlockSize);
+    void *returnValue = &(((ics_free_header*) updatedHeader)->next);
 
-    // printf("calculted end of heap: %p\n",((void*)newBigFreeHeader) + (newBigFreeHeader->header.block_size) + 8);
-    
-    // ics_freelist_print();
-   
-    // ics_freelist_print();
+   return returnValue;
 
 
-    // ics_header_print((void*)updatedHeader);
-
-    // is_allocated((void*)updatedHeader);
-    // is_allocated((void*)newFooter);
-    
-
-
-    // ics_freelist_print();
-
-
-
-  
-
-    // update the header of block to be allocated
-
-
-    // add a footer for the block to be allocated
-
-    // add a new ics free header to the remaining free space of the heap
-    // insert back into the free list and set the allocated bits back to free
 
 }
