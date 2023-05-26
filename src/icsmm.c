@@ -30,8 +30,44 @@ ics_free_header *freelist_next = NULL;
  * If size is 0, then NULL is returned and errno is set to EINVAL - representing
  * an invalid request.
  */
+// newPageHeader->header.block_size |= 0x1;
+        // newPageFooter->block_size |= 0x1;
+
 void *ics_malloc(size_t size) { 
-    return (void*) 0xFFFFFFFF;
+
+    if (freelist_head == NULL)
+    {
+
+        // prepare for first malloc call
+        printf("Adding a page to the heap...");
+        prepareNewPage(&freelist_head);
+        printf("Page Added\n");
+
+        ics_freelist_print();
+
+        
+
+
+    }
+    // else if ()
+    // {
+    //     // request one page at a time and coalesce with free block at the end of previosul ym
+
+// printf("Calculating total block size using payload size for header BLOCK_SIZE...\n");
+//         size_t payloadSizeWithPadding = getAlignedPayloadSize(size);
+//         newPageHeader->header.requested_size = size;
+
+    // }
+    // else if()
+    // {
+
+        
+        // if no more space availablae from heap no more pages return NULL and ENOMEM
+    // }
+
+
+    // return (void*) newPageHeader;
+    return (void*) 0x13342353;
 }
 
 /*

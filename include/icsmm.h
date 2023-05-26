@@ -22,18 +22,21 @@
 #define BLOCK_SIZE_BITS 16
 #define FID_SIZE_BITS 32
 
+// THE HEADER
 typedef struct __attribute__((__packed__)) {
     uint64_t     block_size : BLOCK_SIZE_BITS;
     uint64_t            hid : HID_SIZE_BITS;
     uint64_t requested_size : REQUEST_SIZE_BITS;
 } ics_header;
 
+// HEADER FOR FREE SPACES
 typedef struct __attribute__((__packed__)) ics_free_header {
   ics_header header;
   struct ics_free_header *next;
   struct ics_free_header *prev;
 } ics_free_header;
 
+// THE FOOTER
 typedef struct __attribute__((__packed__)) ics_footer {
     uint64_t     block_size : BLOCK_SIZE_BITS;
     uint64_t            fid : FID_SIZE_BITS;
