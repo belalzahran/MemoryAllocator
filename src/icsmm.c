@@ -82,7 +82,7 @@ void *ics_malloc(size_t size)
                 continue;
             }
 
-            if (ics_inc_brk() == NULL)
+            if (ics_inc_brk() == -1)
             {
                 errno = ENOMEM;
                 return NULL;
@@ -93,8 +93,8 @@ void *ics_malloc(size_t size)
             setEpilogueFooter(freeBlockHeader);
             
         }
-        printf("printing the header 4\n");
-        ics_header_print((void*)freeBlockHeader);
+        // printf("printing the header 4\n");
+        // ics_header_print((void*)freeBlockHeader);
         return splitAndPrepFreeBlock(size,(ics_header*)freeBlockHeader);
         
     }
@@ -118,7 +118,7 @@ void *ics_malloc(size_t size)
                 continue;
             }
             printf("we DID NOT FIND a big enough block\n");
-            if (ics_inc_brk() == NULL)
+            if (ics_inc_brk() == -1)
             {
                 errno = ENOMEM;
                 return NULL;
@@ -130,7 +130,7 @@ void *ics_malloc(size_t size)
             
         }
 
-        printf("no we will split and prep the block to be returned\n");
+        // printf("no we will split and prep the block to be returned\n");
         return splitAndPrepFreeBlock(size,(ics_header*)freeBlockHeader);
 
     }

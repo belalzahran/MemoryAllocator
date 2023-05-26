@@ -41,6 +41,11 @@ int main(int argc, char *argv[]) {
   // Initialize the custom allocator
   ics_mem_init();
 
+  int* value1 = ics_malloc(15);
+   int* value1 = ics_malloc(15);
+    int* value1 = ics_malloc(15);
+
+
   // Tell the user about the fields
   info("\n\nInitialized heap\n");
   // press_to_cont();
