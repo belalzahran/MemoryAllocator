@@ -42,6 +42,8 @@ ics_free_header *freelist_next = NULL;
 
 void *ics_malloc(size_t size) { 
 
+    printf("\nReceived Malloc Request...\n\n");
+
 
     
 
@@ -49,21 +51,22 @@ void *ics_malloc(size_t size) {
 
 
 
-    if (freelist_head == NULL)
-    {
+    // if (freelist_head == NULL)
+    // {
 
         // prepare for first malloc call
-        printf("Adding a page to the heap...");
+        printf("Adding a page to the heap...\n");
         prepareNewPage(&freelist_head, &freelist_next);
         printf("page added!\n");
         //ics_header_print(&(freelist_head->header));
         //ics_freelist_print();
-
         printf("The page is set up and we are preparing to allocate the block...\n");
         ics_free_header* blockToSplit = (ics_free_header*)getNextFit(size, &freelist_head, &freelist_next);
-        //ics_freelist_print();
-        //ics_header_print(blockToSplit);
-        splitAndPrepFreeBlock(size, blockToSplit);
+        // ics_freelist_print();
+        // ics_header_print(blockToSplit);
+        // printf("block to split:");
+        // is_allocated((void*)blockToSplit);
+        splitAndPrepFreeBlock(size, (ics_header*)blockToSplit);
 
 
 
@@ -79,12 +82,12 @@ void *ics_malloc(size_t size) {
         
 
 
-    }
-    else
-    {
-        printf("finding the free block we want to use...");
-        void* freeBlockHeader = getNextFit(size, &freelist_head, &freelist_next);
-    }
+    // }
+    // else
+    // {
+    //     printf("finding the free block we want to use...");
+    //     void* freeBlockHeader = getNextFit(size, &freelist_head, &freelist_next);
+    // }
     
 
     // else if ()

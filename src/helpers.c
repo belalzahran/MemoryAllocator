@@ -3,20 +3,58 @@
 
 /* Helper function definitions go here */
 
-void toggle_allocated_bit(void *block_header_or_footer) 
+
+size_t get_freelist_length(ics_free_header *freelist_head) 
+{
+    size_t length = 0;
+    ics_free_header *current_node = freelist_head;
+    
+    while (current_node != NULL) {
+        length++;
+        current_node = current_node->next;
+    }
+    
+    return length;
+}
+
+bool is_allocated(void *block) {
+
+    uint64_t block_size;
+
+    // Check if the block is a header or a footer
+    if (((ics_header*)block)->hid == HEADER_MAGIC) {
+        block_size = ((ics_header*)block)->block_size;
+    } else if (((ics_footer*)block)->fid == FOOTER_MAGIC) {
+        block_size = ((ics_footer*)block)->block_size;
+    } else {
+        printf("This block is neither a header nor a footer\n");
+        return false; // or handle the error in a way that suits your program
+    }
+
+    // Check the least significant bit of the block_size
+    if (block_size & 0x1) {
+        printf("This block is marked as allocated\n");
+        return true;
+    } else {
+        printf("This block is not marked as allocated\n");
+        return false;
+    }
+}
+
+void toggle_allocated_bit(void *block_header_or_footer, char* say, int x) 
 {
     uint64_t *block_size_ptr = (uint64_t *)block_header_or_footer;
 
     // Check if the last bit of block_size is 1 or 0
     uint64_t last_bit = *block_size_ptr & 0x1;
     
-    if (last_bit == 1) {
+    if (x == 0) {
         // If last bit is 1, set it to 0
-        printf("Allocated bit set from 1 to 0\n");
+        printf("%s: allocated bit set to 0\n", say);
         *block_size_ptr &= ~0x1;
     } else {
         // If last bit is 0, set it to 1
-        printf("Allocated bit set from 0 to 1\n");
+        printf("%s: allocated bit set to 1\n", say);
         *block_size_ptr |= 0x1;
     }
 }
@@ -70,7 +108,7 @@ void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist
     prologue->block_size = 0;
     prologue->requested_size = 0;
     // printf("Setting allocated bit of the Eplilogue to 1...");
-    toggle_allocated_bit((void*)prologue);
+    toggle_allocated_bit((void*)prologue,"prologue", 1);
     // printf("Set!\n");
 
     // printf("Initialized!\n");
@@ -108,7 +146,7 @@ void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist
     epilogue->block_size = 0;
     epilogue->requested_size = 0;
     // printf("Setting allocated bit of the Eplilogue to 1...");
-    toggle_allocated_bit((void*)epilogue);
+    toggle_allocated_bit((void*)epilogue,"epilogue", 1);
     // printf("Set!\n");
 
     // printf("\n\n\nTHE END OF THE HEAP ADDRESS(getbrk):        %p\n", ics_get_brk());
@@ -116,8 +154,12 @@ void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist
 
     // printf("Done preparing the newly added page.\n");
     // printf("Now setting head of the free linked list to point to newPageHeader...");
-    *freelist_head = newPageHeader;
-    *freelist_next = newPageHeader;
+
+    insertIntoFreeList(freelist_head, freelist_next, newPageHeader);
+
+
+    // *freelist_head = newPageHeader;
+    // *freelist_next = newPageHeader;
     // printf("Set!\n\n");
 
     return newPageHeader;
@@ -131,6 +173,12 @@ void removeFromFreeList(ics_free_header **freelist_head, ics_free_header *block_
     if (*freelist_head == NULL || block_to_remove == NULL) {
         return;
     }
+    // if(get_freelist_length(*freelist_head) == 1)
+    // {
+    //     *freelist_head = NULL;
+    //     *freelist_next = NULL;
+    //     return;
+    // }
 
     ics_free_header *current_block = *freelist_head;
     
@@ -157,10 +205,12 @@ void removeFromFreeList(ics_free_header **freelist_head, ics_free_header *block_
             current_block->prev = NULL;
 
             // set the removed block to allocated once taking it from the free linked list
-            toggle_allocated_bit(&(current_block->header));
-        
-            ics_footer* current_footer = (ics_footer*)((char*)current_block + current_block->header.block_size - sizeof(ics_footer));
-            toggle_allocated_bit(current_footer);
+
+
+            toggle_allocated_bit(&(current_block->header), "header of block removed from free list", 1);
+            ics_footer* current_footer = (ics_footer*)((void*)current_block + current_block->header.block_size - sizeof(ics_footer));
+            toggle_allocated_bit(current_footer,"footer of block removed from free list", 1);
+            
 
             return;
         }
@@ -184,20 +234,32 @@ void* getNextFit(size_t size, ics_free_header **freelist_head, ics_free_header *
         do
         {
             // check the block size and see if it fits
+            //ics_freelist_print();
             if ((*freelist_next)->header.block_size > potentialBlockSize)
             {
-                // increment pointer b
                 ics_free_header *selectedBlock = *freelist_next;
                 *freelist_next = (*freelist_next)->next;
-                // remove from list
                 removeFromFreeList(freelist_head, selectedBlock);
-                //return pointer to header of block
+                //ics_freelist_print();
+
+                // Check if the free list is empty
+                if (*freelist_head == NULL) 
+                {
+                    *freelist_next = NULL;  // Make sure freelist_next doesn't point to an allocated block
+                }
                 return (void*)(selectedBlock);
             }
             // Access the next and previous blocks in the free list
+
             *freelist_next = (*freelist_next)->next;
 
-        }while((*freelist_next != searchStartLocation) && (*freelist_next == NULL));
+        }while((*freelist_next != searchStartLocation) && (*freelist_next != NULL));
+
+
+         if(get_freelist_length(*freelist_head) == 0)
+        {
+            *freelist_next = NULL;
+        }
 
     }
     else
@@ -210,40 +272,45 @@ void* getNextFit(size_t size, ics_free_header **freelist_head, ics_free_header *
         // if freelist next reaches block where it began searching, you must ask for more room
 }
 
-
-
 // inserting in address order
 // loop should never reach nulll (loop back)
  // make sure that last node in free list points back to head
-void insertIntoFreeList(ics_free_header **freelist_head, ics_free_header *block) {
-    // If the free list is currently empty
-    toggle_allocated_bit((void*)block);
+void insertIntoFreeList(ics_free_header **freelist_head, ics_free_header **freelist_next, ics_free_header *block) {
+
+    ics_footer* current_footer = (ics_footer*)((char*)block + block->header.block_size - sizeof(ics_footer));
+    toggle_allocated_bit((void*)block, "header of block inserted into free list", 0);
+    toggle_allocated_bit(current_footer, "footer of block inserted into free list", 0);
+
+    // Set next and prev pointers of the block to NULL initially
+    block->next = NULL;
+    block->prev = NULL;
+
     if (*freelist_head == NULL) {
-        // Set the freelist_head and freelist_next to the new block
+        // Set the freelist_head to the new block
         *freelist_head = block;
-        block->next = block;  // The next block is itself
-        block->prev = block;  // The previous block is itself
+        *freelist_next = block;
     } else {
         // If the free list is not empty
         ics_free_header *current = *freelist_head;
-        do {
-            // If the block to be inserted has an address less than the current node
-            if (block < current || (block > current->prev && current == *freelist_head)) {
-                // Insert the block before the current node
-                block->next = current;
-                block->prev = current->prev;
-                current->prev->next = block;
-                current->prev = block;
 
-                // If the block is inserted at the start of the list, update the freelist_head
-                if (block < *freelist_head)
-                    *freelist_head = block;
-
-                return;
+        // Check if the block should be inserted before the head
+        if (block < *freelist_head) {
+            block->next = *freelist_head;
+            (*freelist_head)->prev = block;
+            *freelist_head = block;
+        } else {
+            // Iterate through the rest of the list
+            while (current->next != NULL && current->next < block) {
+                current = current->next;
             }
-
-            current = current->next;
-        } while (current != *freelist_head);  // Stop if we have checked all nodes in the list
+            // Insert the block after the current block
+            block->next = current->next;
+            block->prev = current;
+            if (current->next != NULL) {
+                current->next->prev = block;
+            }
+            current->next = block;
+        }
     }
 }
 
@@ -251,19 +318,45 @@ void insertIntoFreeList(ics_free_header **freelist_head, ics_free_header *block)
 
 
 
-void splitAndPrepFreeBlock(size_t size, ics_free_header* bigFreeHeader)
+
+
+void splitAndPrepFreeBlock(size_t size, ics_header* bigFreeHeader)
 {
 
       // get the size we are going to split w
 
     size_t potentialBlockSize = getAlignedPayloadSize(size) + 16;
+    ics_header* updatedHeader = bigFreeHeader;
 
-    printf("HSHFJDLS:KFJ:LDFJK:LDSJF:DKSF\n\n\n");
+    updatedHeader->block_size = potentialBlockSize;
+    updatedHeader->requested_size = size;
+
+    ics_footer* newFooter = (ics_footer*) (((void*)updatedHeader) + (updatedHeader->block_size) - sizeof(ics_footer));
+    newFooter->block_size = updatedHeader->block_size;
+    newFooter->fid = FOOTER_MAGIC;
+    newFooter->requested_size = size;
+
+    // must togge allocated bit again because block size was reset
+    toggle_allocated_bit(updatedHeader,"updated header of new block allocated", 1);
+    toggle_allocated_bit(newFooter,"new footer of newly allocated block", 1);
+
+    // ics_header_print((void*)updatedHeader);
+
+    // is_allocated((void*)updatedHeader);
+    // is_allocated((void*)newFooter);
+    
 
 
+    // // *block_size_ptr &= ~0x1;
+    // // } else {
+    // //     // If last bit is 0, set it to 1
+    // //     printf("%s: allocated bit set to 1\n", say);
+    // //     *block_size_ptr |= 0x1;
 
 
-    ics_header_print((void*)bigFreeHeader);
+    // ics_freelist_print();
+
+
 
   
 
