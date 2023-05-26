@@ -33,22 +33,64 @@ ics_free_header *freelist_next = NULL;
 // newPageHeader->header.block_size |= 0x1;
         // newPageFooter->block_size |= 0x1;
 
+
+        // conditions to perform
+        // - malloc call is bigger then 5 pages
+        // - malloc call needs to call ics_inc for more room
+        // - malloc finds enough space and allocates block
+        // - malloc call finishes last page and recives a fail from calling ics_inc
+
 void *ics_malloc(size_t size) { 
+
+
+    
+
+    //// WAS HERE
+
+
 
     if (freelist_head == NULL)
     {
 
         // prepare for first malloc call
         printf("Adding a page to the heap...");
-        prepareNewPage(&freelist_head);
-        printf("Page Added\n");
+        prepareNewPage(&freelist_head, &freelist_next);
+        printf("page added!\n");
+        //ics_header_print(&(freelist_head->header));
+        ics_freelist_print();
+
+        printf("The page is set up and we are preparing to allocate the block...\n");
+        ics_free_header* blockToSplit = (ics_free_header*)getNextFit(size, &freelist_head, &freelist_next);
+        size_t potentialBlockSize = getAlignedPayloadSize(size) + 16;
 
         ics_freelist_print();
+
+        ics_header_print(blockToSplit);
+
+        // splitFreeBlock()
+
+
+
+
+
+        
+
+
+
+
+        
 
         
 
 
     }
+    else
+    {
+        printf("finding the free block we want to use...");
+        void* freeBlockHeader = getNextFit(size, &freelist_head, &freelist_next);
+    }
+    
+
     // else if ()
     // {
     //     // request one page at a time and coalesce with free block at the end of previosul ym

@@ -40,10 +40,7 @@ size_t getAlignedPayloadSize(size_t size)
 }
 
 
-
-
-
-void* prepareNewPage(ics_free_header **freelist_head)
+void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist_next)
 {
     // printf("brk location: %p\n",ics_get_brk());
 
@@ -69,7 +66,7 @@ void* prepareNewPage(ics_free_header **freelist_head)
     newPageHeader->next = NULL;
     newPageHeader->prev = NULL;
     // printf("Initialized header values...\n");
-    isAligned(newPageHeader,8);
+    // isAligned(newPageHeader,8);
     newPageHeader->header.hid = HEADER_MAGIC;
     newPageHeader->header.requested_size = 0;
     newPageHeader->header.block_size = ics_get_brk() - 8 - ((void*)newPageHeader) ; 
@@ -84,7 +81,7 @@ void* prepareNewPage(ics_free_header **freelist_head)
     newPageFooter->block_size = newPageHeader->header.block_size;
     newPageFooter->fid = FOOTER_MAGIC;
     newPageFooter->requested_size = 0;
-    isAligned(newPageFooter,8);
+    // isAligned(newPageFooter,8);
 
 
     // printf("***EPILOGUE***\n\n");
@@ -103,8 +100,148 @@ void* prepareNewPage(ics_free_header **freelist_head)
     // printf("Done preparing the newly added page.\n");
     // printf("Now setting head of the free linked list to point to newPageHeader...");
     *freelist_head = newPageHeader;
+    *freelist_next = newPageHeader;
     // printf("Set!\n\n");
 
     return newPageHeader;
 
 }
+
+
+
+void removeFromFreeList(ics_free_header **freelist_head, ics_free_header *block_to_remove) {
+    // Check if the freelist is empty or block to remove is NULL
+    if (*freelist_head == NULL || block_to_remove == NULL) {
+        return;
+    }
+
+    ics_free_header *current_block = *freelist_head;
+    
+    do {
+        // Check if current_block is the block we want to remove
+        if (current_block == block_to_remove) {
+            // If the block to remove is at the head of the list
+            if (current_block == *freelist_head) {
+                *freelist_head = current_block->next;
+            }
+
+            // If there is a previous block, link it to the next block
+            if (current_block->prev != NULL) {
+                current_block->prev->next = current_block->next;
+            }
+
+            // If there is a next block, link it to the previous block
+            if (current_block->next != NULL) {
+                current_block->next->prev = current_block->prev;
+            }
+
+            // Set next and prev pointers of the removed block to NULL
+            current_block->next = NULL;
+            current_block->prev = NULL;
+
+            current_block->header.block_size &= ~0x1;
+            ics_footer* current_footer = (ics_footer*)((char*)current_block + current_block->header.block_size - sizeof(ics_footer));
+            current_footer->block_size &= ~0x1;
+
+
+            return;
+        }
+
+        current_block = current_block->next;
+
+
+    } while (current_block != *freelist_head);
+}
+
+// start searching at next
+void* getNextFit(size_t size, ics_free_header **freelist_head, ics_free_header **freelist_next)
+{
+    size_t alignedSize = getAlignedPayloadSize(size);
+    size_t potentialBlockSize = alignedSize + 16;
+
+    if (*freelist_next != NULL) 
+    {
+        ics_free_header *searchStartLocation = *freelist_next;
+
+        do
+        {
+            // check the block size and see if it fits
+            if ((*freelist_next)->header.block_size > potentialBlockSize)
+            {
+                // increment pointer b
+                ics_free_header *selectedBlock = *freelist_next;
+                *freelist_next = (*freelist_next)->next;
+                // remove from list
+                removeFromFreeList(freelist_head, selectedBlock);
+                //return pointer to header of block
+                return (void*)(selectedBlock);
+            }
+            // Access the next and previous blocks in the free list
+            *freelist_next = (*freelist_next)->next;
+
+        }while((*freelist_next != searchStartLocation) && (*freelist_next == NULL));
+
+    }
+    else
+    {
+        printf("*freelist_next is NULL\n\n\n");
+        return (void*)0x34234;
+    }
+    return NULL;
+
+        // if freelist next reaches block where it began searching, you must ask for more room
+}
+
+
+
+// inserting in address order
+// loop should never reach nulll (loop back)
+ // make sure that last node in free list points back to head
+void insertIntoFreeList(ics_free_header **freelist_head, ics_free_header *block) {
+    // If the free list is currently empty
+    if (*freelist_head == NULL) {
+        // Set the freelist_head and freelist_next to the new block
+        *freelist_head = block;
+        block->next = block;  // The next block is itself
+        block->prev = block;  // The previous block is itself
+    } else {
+        // If the free list is not empty
+        ics_free_header *current = *freelist_head;
+        do {
+            // If the block to be inserted has an address less than the current node
+            if (block < current || (block > current->prev && current == *freelist_head)) {
+                // Insert the block before the current node
+                block->next = current;
+                block->prev = current->prev;
+                current->prev->next = block;
+                current->prev = block;
+
+                // If the block is inserted at the start of the list, update the freelist_head
+                if (block < *freelist_head)
+                    *freelist_head = block;
+
+                return;
+            }
+
+            current = current->next;
+        } while (current != *freelist_head);  // Stop if we have checked all nodes in the list
+    }
+}
+
+
+
+
+
+// splitAndPrepFreeBlock(size_t size, ics_free_header* header)
+// {
+
+//     // get the size we are going to split w
+
+//     // update the header of block to be allocated
+//     // add a footer for the block to be allocated
+//     // make sure the blockto be allocated is last bit set to one
+
+//     // add a new ics free header to the remaining free space of the heap
+//     // insert back into the free list and set the allocated bits back to free
+
+// }
