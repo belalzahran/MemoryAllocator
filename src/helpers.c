@@ -97,12 +97,12 @@ size_t getAlignedPayloadSize(size_t size)
 
 void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist_next)
 {
-    // printf("brk location: %p\n",ics_get_brk());
+    printf("brk location: %p\n",ics_get_brk());
 
     //create prologue and set allocated bit
     // printf("***PROLOGUE***\n\n");
     ics_footer * prologue = (ics_footer*) ics_inc_brk();
-    // printf("Heap Beginning/Prologue set at: %p\n",(void*)prologue);
+    printf("Heap Beginning/Prologue set at: %p\n",(void*)prologue);
     // printf("Initializing prologue values...");
     prologue->fid = FOOTER_MAGIC;
     prologue->block_size = 0;
@@ -115,7 +115,7 @@ void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist
 
 
     // printf("***HEADER***\n\n");
-    // printf("Setting header set at location: %p\n", ((void*)prologue)+8);
+    printf("Setting header set at location: %p\n", ((void*)prologue)+8);
     ics_free_header* newPageHeader = (ics_free_header*)(((void *)prologue) + 8);
     // printf("Initializing next and prev to NULL...\n");
     newPageHeader->next = NULL;
@@ -130,7 +130,7 @@ void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist
 
 
     // printf("***FOOTER***\n\n");
-    // printf("Setting footer at location (adding up): %p\n", (((void *)newPageHeader) + (newPageHeader->header.block_size) - 8));
+    printf("Setting footer at location (adding up): %p\n", (((void *)newPageHeader) + (newPageHeader->header.block_size) - 8));
     // printf("Setting footer at location (getbrk): %p\n", ics_get_brk() - 16);
     ics_footer * newPageFooter = (ics_footer*) (ics_get_brk() - 16);
     newPageFooter->block_size = newPageHeader->header.block_size;
@@ -149,7 +149,7 @@ void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist
     toggle_allocated_bit((void*)epilogue,"epilogue", 1);
     // printf("Set!\n");
 
-    // printf("\n\n\nTHE END OF THE HEAP ADDRESS(getbrk):        %p\n", ics_get_brk());
+    printf("\n\n\nTHE END OF THE HEAP ADDRESS(getbrk):        %p\n", ics_get_brk());
     // printf("THE END OF THE HEAP ADDRESS(header + 4088): %p\n\n\n\n", (void*)newPageHeader + 4088);
 
     // printf("Done preparing the newly added page.\n");
@@ -323,9 +323,14 @@ void insertIntoFreeList(ics_free_header **freelist_head, ics_free_header **freel
 void splitAndPrepFreeBlock(size_t size, ics_header* bigFreeHeader)
 {
 
+    size_t prevBlockSize = bigFreeHeader->block_size;
+    
+
+    printf("start of heap %p\n",(void*)bigFreeHeader);
       // get the size we are going to split w
 
     size_t potentialBlockSize = getAlignedPayloadSize(size) + 16;
+    size_t newFreeBlockSize = prevBlockSize - potentialBlockSize;
     ics_header* updatedHeader = bigFreeHeader;
 
     updatedHeader->block_size = potentialBlockSize;
@@ -340,18 +345,64 @@ void splitAndPrepFreeBlock(size_t size, ics_header* bigFreeHeader)
     toggle_allocated_bit(updatedHeader,"updated header of new block allocated", 1);
     toggle_allocated_bit(newFooter,"new footer of newly allocated block", 1);
 
+    ics_free_header* newBigFreeHeader = (ics_free_header*) ((void*)newFooter + 8);
+    newBigFreeHeader->header.block_size = prevBlockSize - potentialBlockSize;
+    newBigFreeHeader->header.hid = HEADER_MAGIC;
+    newBigFreeHeader->header.requested_size = 0;
+    newBigFreeHeader->next = NULL;
+    newBigFreeHeader->prev = NULL;
+
+    toggle_allocated_bit(newBigFreeHeader,"new big free header", 0);
+
+    
+    // ics_footer* newBigFreeFooter = (ics_footer*) (((void*)newBigFreeHeader) + (newBigFreeHeader->header.block_size) - 8);
+    // newBigFreeFooter->block_size = newBigFreeHeader->header.block_size;
+    // newBigFreeFooter->fid = FOOTER_MAGIC;
+    // newBigFreeFooter->requested_size = 0;
+
+    ics_header_print((void*)updatedHeader);
+    ics_header_print((void*)newBigFreeHeader);
+
+    ics_footer* newBigFreeFooter = (ics_footer*) (((void*)newBigFreeHeader) + newBigFreeHeader->header.block_size - 8);
+    newBigFreeFooter->block_size = prevBlockSize - potentialBlockSize;
+    toggle_allocated_bit(newBigFreeFooter,"new big free footer", 0);
+
+     insertIntoFreeList(&freelist_head, &freelist_next, newBigFreeHeader);
+
+    //  ics_header_print((void*)updatedHeader);
+    // ics_header_print((void*)newBigFreeHeader);
+
+
+
+
+
+    // ics_header_print((void*)newBigFreeFooter);
+
+    // printf("new big free ehader block size: %x\n",newBigFreeHeader->header.block_size);
+    // printf("prevBlock size: %ld\n", prevBlockSize);
+    // printf("potential block size size: %ld\n", potentialBlockSize);
+    // printf("newfreeblocksize size: %ld\n", newFreeBlockSize);
+    // printf("address of udpated header : %p\n", (void*)updatedHeader);
+
+    // printf("address of new footer : %p\n", (void*)newFooter);
+    // printf("address of new footer + 8: %p\n",  ((void*)newFooter + 8));
+
+
+    // printf("address of new big free header : %p\n", (void*)newBigFreeHeader);
+    // printf("prevBlock size: %ld\n", prevBlockSize);
+
+    // printf("calculted end of heap: %p\n",((void*)newBigFreeHeader) + (newBigFreeHeader->header.block_size) + 8);
+    
+    // ics_freelist_print();
+   
+    // ics_freelist_print();
+
+
     // ics_header_print((void*)updatedHeader);
 
     // is_allocated((void*)updatedHeader);
     // is_allocated((void*)newFooter);
     
-
-
-    // // *block_size_ptr &= ~0x1;
-    // // } else {
-    // //     // If last bit is 0, set it to 1
-    // //     printf("%s: allocated bit set to 1\n", say);
-    // //     *block_size_ptr |= 0x1;
 
 
     // ics_freelist_print();
