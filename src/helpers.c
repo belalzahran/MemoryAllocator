@@ -50,11 +50,11 @@ void toggle_allocated_bit(void *block_header_or_footer, char* say, int x)
     
     if (x == 0) {
         // If last bit is 1, set it to 0
-        printf("%s: allocated bit set to 0\n", say);
+        //printf("%s: allocated bit set to 0\n", say);
         *block_size_ptr &= ~0x1;
     } else {
         // If last bit is 0, set it to 1
-        printf("%s: allocated bit set to 1\n", say);
+        //printf("%s: allocated bit set to 1\n", say);
         *block_size_ptr |= 0x1;
     }
 }
@@ -63,11 +63,11 @@ bool isAligned(void* ptr, int alignmentNum)
 {
     if ((unsigned long)(ptr) % alignmentNum != 0)
     { 
-        printf("Your address is NOT aligned with %d!\n",alignmentNum);
+        //printf("Your address is NOT aligned with %d!\n",alignmentNum);
         return false;
     }
     else{
-        printf("Your address is aligned with %d!\n",alignmentNum);
+        //printf("Your address is aligned with %d!\n",alignmentNum);
         return true;
 
     }
@@ -97,12 +97,12 @@ size_t getAlignedPayloadSize(size_t size)
 
 void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist_next)
 {
-    printf("brk location: %p\n",ics_get_brk());
+    // printf("brk location: %p\n",ics_get_brk());
 
     //create prologue and set allocated bit
     // printf("***PROLOGUE***\n\n");
     ics_footer * prologue = (ics_footer*) ics_inc_brk();
-    printf("Heap Beginning/Prologue set at: %p\n",(void*)prologue);
+    // printf("Heap Beginning/Prologue set at: %p\n",(void*)prologue);
     // printf("Initializing prologue values...");
     prologue->fid = FOOTER_MAGIC;
     prologue->block_size = 0;
@@ -115,7 +115,7 @@ void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist
 
 
     // printf("***HEADER***\n\n");
-    printf("Setting header set at location: %p\n", ((void*)prologue)+8);
+    // printf("Setting header set at location: %p\n", ((void*)prologue)+8);
     ics_free_header* newPageHeader = (ics_free_header*)(((void *)prologue) + 8);
     // printf("Initializing next and prev to NULL...\n");
     newPageHeader->next = NULL;
@@ -130,7 +130,7 @@ void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist
 
 
     // printf("***FOOTER***\n\n");
-    printf("Setting footer at location (adding up): %p\n", (((void *)newPageHeader) + (newPageHeader->header.block_size) - 8));
+    // printf("Setting footer at location (adding up): %p\n", (((void *)newPageHeader) + (newPageHeader->header.block_size) - 8));
     // printf("Setting footer at location (getbrk): %p\n", ics_get_brk() - 16);
     ics_footer * newPageFooter = (ics_footer*) (ics_get_brk() - 16);
     newPageFooter->block_size = newPageHeader->header.block_size;
@@ -149,7 +149,7 @@ void* prepareNewPage(ics_free_header **freelist_head, ics_free_header **freelist
     toggle_allocated_bit((void*)epilogue,"epilogue", 1);
     // printf("Set!\n");
 
-    printf("\n\n\nTHE END OF THE HEAP ADDRESS(getbrk):        %p\n", ics_get_brk());
+    // printf("\n\n\nTHE END OF THE HEAP ADDRESS(getbrk):        %p\n", ics_get_brk());
     // printf("THE END OF THE HEAP ADDRESS(header + 4088): %p\n\n\n\n", (void*)newPageHeader + 4088);
 
     // printf("Done preparing the newly added page.\n");
@@ -264,6 +264,8 @@ void* getNextFit(size_t size, ics_free_header **freelist_head, ics_free_header *
     }
     else
     {
+        //
+        // NEED TO ASK FOR MORE SPACE
         printf("*freelist_next is NULL\n\n\n");
         return (void*)0x34234;
     }
