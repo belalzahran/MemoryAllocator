@@ -49,7 +49,7 @@ int main(int argc, char *argv[]) {
   printf("=== Test1: Allocation test ===\n");
   // Test #1: Allocate an integer
   //int *value1 = ics_malloc(sizeof(int));
-int *value1 = ics_malloc(15);
+  int *value1 = ics_malloc(15);
   null_check(value1, sizeof(int));
   payload_check(value1);
   ics_payload_print((void*)value1);
