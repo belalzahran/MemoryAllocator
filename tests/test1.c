@@ -37,6 +37,73 @@ void payload_check(void* ptr) {
     }
 }
 
+// int main(int argc, char *argv[]) {
+//   // Initialize the custom allocator
+//   ics_mem_init();
+
+//   // Tell the user about the fields
+//   info("\n\nInitialized heap\n");
+//   // press_to_cont();
+
+//   // Print out title for first test
+//   printf("=== Test1: Allocation test ===\n");
+//   // Test #1: Allocate an integer
+//   //int *value1 = ics_malloc(sizeof(int));
+//   int *value1 = ics_malloc(15);
+//   null_check(value1, sizeof(int));
+//   payload_check(value1);
+//   ics_payload_print((void*)value1);
+//   press_to_cont();
+
+//   // Now assign a value
+//   printf("=== Test2: Assignment test ===\n");
+//   info("Attempting to assign value1 = %d\n", VALUE1_VALUE);
+//   // Assign the value
+//   *value1 = VALUE1_VALUE;
+//   // Now check its value
+//   CHECK_PRIM_CONTENTS(value1, VALUE1_VALUE, "%d", "value1");
+//   ics_payload_print((void*)value1);
+//   press_to_cont();
+
+//   printf("=== Test3: Allocate a second variable ===\n");
+//   info("Attempting to assign value2 = %ld\n", VALUE2_VALUE);
+//   long *value2 = ics_malloc(sizeof(long));
+//   null_check(value2, sizeof(long));
+//   payload_check(value2);
+//   // Assign a value
+//   *value2 = VALUE2_VALUE;
+//   // Check value
+//   CHECK_PRIM_CONTENTS(value2, VALUE2_VALUE, "%ld", "value2");
+//   ics_payload_print((void*)value2);
+//   press_to_cont();
+
+//   printf("=== Test4: does value1 still equal %d ===\n", VALUE1_VALUE);
+//   CHECK_PRIM_CONTENTS(value1, VALUE1_VALUE, "%d", "value1");
+//   ics_payload_print((void*)value1);
+//   press_to_cont();
+
+//   // Free a variable
+//   printf("=== Test5: Free a block and snapshot ===\n");
+//   info("%s\n", "Freeing value1...");
+//   ics_free(value1);
+//   ics_freelist_print();
+//   press_to_cont();
+
+//   // Allocate a large chunk of memory and then free it
+//   printf("=== Test6: 8192 byte allocation ===\n");
+//   void *memory = ics_malloc(8192);
+//   ics_freelist_print();
+//   press_to_cont();
+//   ics_free(memory);
+//   ics_freelist_print();
+//   press_to_cont();
+
+//   ics_mem_fini();
+
+//   return EXIT_SUCCESS;
+// }
+
+
 int main(int argc, char *argv[]) {
   // Initialize the custom allocator
   ics_mem_init();
@@ -49,56 +116,40 @@ int main(int argc, char *argv[]) {
   printf("=== Test1: Allocation test ===\n");
   // Test #1: Allocate an integer
   //int *value1 = ics_malloc(sizeof(int));
-  int *value1 = ics_malloc(15);
-  null_check(value1, sizeof(int));
-  payload_check(value1);
+
+  int *value1 = ics_malloc(40);
   ics_payload_print((void*)value1);
+  ics_freelist_print();
   press_to_cont();
 
-  // Now assign a value
-  printf("=== Test2: Assignment test ===\n");
-  info("Attempting to assign value1 = %d\n", VALUE1_VALUE);
-  // Assign the value
-  *value1 = VALUE1_VALUE;
-  // Now check its value
-  CHECK_PRIM_CONTENTS(value1, VALUE1_VALUE, "%d", "value1");
-  ics_payload_print((void*)value1);
-  press_to_cont();
-
-  printf("=== Test3: Allocate a second variable ===\n");
-  info("Attempting to assign value2 = %ld\n", VALUE2_VALUE);
-  long *value2 = ics_malloc(sizeof(long));
-  null_check(value2, sizeof(long));
-  payload_check(value2);
-  // Assign a value
-  *value2 = VALUE2_VALUE;
-  // Check value
-  CHECK_PRIM_CONTENTS(value2, VALUE2_VALUE, "%ld", "value2");
+  int *value2 = ics_malloc(100);
   ics_payload_print((void*)value2);
-  press_to_cont();
-
-  printf("=== Test4: does value1 still equal %d ===\n", VALUE1_VALUE);
-  CHECK_PRIM_CONTENTS(value1, VALUE1_VALUE, "%d", "value1");
-  ics_payload_print((void*)value1);
-  press_to_cont();
-
-  // Free a variable
-  printf("=== Test5: Free a block and snapshot ===\n");
-  info("%s\n", "Freeing value1...");
-  ics_free(value1);
   ics_freelist_print();
   press_to_cont();
 
-  // Allocate a large chunk of memory and then free it
-  printf("=== Test6: 8192 byte allocation ===\n");
-  void *memory = ics_malloc(8192);
-  ics_freelist_print();
-  press_to_cont();
-  ics_free(memory);
+  int *value3 = ics_malloc(15);
+  ics_payload_print((void*)value3);
   ics_freelist_print();
   press_to_cont();
 
-  ics_mem_fini();
+
+  // int *value2 = ics_malloc(17);
+  // ics_payload_print((void*)value2);
+  // ics_freelist_print();
+  // press_to_cont();
+
+
+  // int *value3 = ics_malloc(20);
+  // ics_payload_print((void*)value3);
+  // ics_freelist_print();
+
+
+  
+
+
+
+   ics_mem_fini();
+
 
   return EXIT_SUCCESS;
 }

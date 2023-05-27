@@ -81,7 +81,7 @@ size_t getAlignedPayloadSize(size_t size)
     {
         return 16;
     }
-    else if (size == 16)
+    else if (size == 16 || (size % 16 == 0))
     {
         return size;
     }
@@ -101,10 +101,13 @@ void setEpilogue()
     epilogue->block_size = 0;
     epilogue->requested_size = 0;
     toggle_allocated_bit((void*)epilogue,"epilogue", 1);
+    // printf("we finsihed the eiplogueee!!!!!~~~\n");
 }
 
 void setEpilogueFooter(void* header)
 {
+    // printf("printing the size of header to see why it is wrong: %d\n",((ics_free_header*)header)->header.block_size);
+
     ics_footer * newPageFooter = (ics_footer*) (ics_get_brk() - 16);
     newPageFooter->block_size = ((ics_free_header*)header)->header.block_size;
     newPageFooter->fid = FOOTER_MAGIC;
@@ -220,11 +223,13 @@ void* loopAndCheckList(size_t size,  ics_free_header *freelist_head, ics_free_he
 
 
 void insertIntoFreeList(ics_free_header **freelist_head, ics_free_header **freelist_next, ics_free_header *block) 
-
 {
     toggle_allocated_bit((void*)block, "header of block inserted into free list", 0);
     ics_footer* current_footer = (ics_footer*)((char*)block + block->header.block_size - sizeof(ics_footer));
+    current_footer->block_size = block->header.block_size;
     toggle_allocated_bit(current_footer, "footer of block inserted into free list", 0);
+
+    // printf("Printing the block size of the footer that we insert: %d\n",current_footer->block_size);
 
     // Set next and prev pointers of the block to NULL initially
     block->next = NULL;

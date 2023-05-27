@@ -44,6 +44,7 @@ ics_free_header *freelist_next = NULL;
 
 void *ics_malloc(size_t size)
 { 
+
     if(size > 20448)
     {
         errno = ENOMEM;
@@ -53,85 +54,108 @@ void *ics_malloc(size_t size)
     bool mallocBlockFound = false;
     ics_free_header* freeBlockHeader;
 
-    //printf("\nReceived Malloc Request...\n\n");
+    printf("\nReceived Malloc Request...\n\n");
     
     if (freelist_head == NULL)
     {
+        printf("1st IF BLk)Inside first if\n");
         prepareNewPage(&freelist_head, &freelist_next);
-
-        printf("printing the header 1\n");
-
-        ics_header_print((void*)&(freelist_head->header));
-
+        printf("1st IF BLk)created new page\n");
+        // printf("printing the header 1\n");
+        // ics_header_print((void*)&(freelist_head->header));
         while(!mallocBlockFound)
         {
+            printf("1st IF BLk)Inside while loop\n");
+            // ics_freelist_print();
             freeBlockHeader = (ics_free_header*)loopAndCheckList(size, freelist_head, freelist_next);
-            printf("printing the header 2\n");
-            ics_header_print((void*)freeBlockHeader);
             
             if(freeBlockHeader != NULL)
             {
+                printf("1st IF BLk)BLOCK FOR MALLOC FOUND, PRINTING BLOCK..\n");
+                // ics_header_print((void*)freeBlockHeader);
                 mallocBlockFound = true;
-                                ics_freelist_print();
 
                 removeFromFreeList(&freelist_head, &freelist_next, freeBlockHeader);
-                                ics_freelist_print();
 
-                printf("printing the header 3\n");
-                ics_header_print((void*)freeBlockHeader);
+                // printf("printing the header 3\n");
+                // ics_header_print((void*)freeBlockHeader);
                 continue;
             }
 
-            if (ics_inc_brk() == NULL)
+            printf("1st IF BLk)we DID NOT FIND a big enough block\n");
+
+            if (ics_inc_brk() == (void*)-1)
             {
                 errno = ENOMEM;
                 return NULL;
             }
-
+            
+            // printf("(1st IF BLk)we will prepare new page now...\n");
             updateHeader();
+            // printf("1st IF BLk)finished running update header\n");
             setEpilogue();
-            setEpilogueFooter(freeBlockHeader);
+            // printf("1st IF BLk)finished running set epilogue\n");
+            //ics_freelist_print();
+            //ics_header_print((void*)freeBlockHeader);
+            //ics_header_print(&(freelist_head->header));
+            setEpilogueFooter(&(freelist_head->header));
+            // ics_header_print(&(freelist_head->header));
+            // printf("1st IF BLk)finished running set epilogue footer\n");
+            printf("1st IF BLk)WE ARE GOING TO LOOP BACK AFTER ADDING MORE ROOM\n");
+
             
         }
-        printf("printing the header 4\n");
-        ics_header_print((void*)freeBlockHeader);
-        return splitAndPrepFreeBlock(size,(ics_header*)freeBlockHeader);
+        // printf("printing the header 4\n");
+        // ics_header_print((void*)freeBlockHeader);
+        void* retVal = splitAndPrepFreeBlock(size,(ics_header*)freeBlockHeader);
+        return retVal;
         
     }
     else
     {
-
+        printf("Inside else\n");
         while(!mallocBlockFound)
         {
-            printf("checking to see if we have a big enough block\n");
+            // printf("printing the header\n");
+            // ics_header_print((void*)freeBlockHeader);
+            // ics_freelist_print();
             freeBlockHeader = (ics_free_header*)loopAndCheckList(size, freelist_head, freelist_next);
 
             if(freeBlockHeader != NULL)
             {
-                printf("we found a big enough block\n");
+                printf("FOUND THE BLOCK WE WILL USE TO RETURN MALLOC SPACE\n");
+                // ics_header_print((void*)freeBlockHeader);
+                // printf("we found a big enough block\n");
                 mallocBlockFound = true;
-                printf("no we remove the block from the free list\n");
-                ics_freelist_print();
+                // printf("no we remove the block from the free list\n");
+                // ics_freelist_print();
                 removeFromFreeList(&freelist_head, &freelist_next, freeBlockHeader);
-                ics_freelist_print();
-                printf("block removed from the free list\n");
+                // ics_freelist_print();
+                // printf("block removed from the free list\n");
                 continue;
             }
+
             printf("we DID NOT FIND a big enough block\n");
-            if (ics_inc_brk() == NULL)
+            if (ics_inc_brk() == (void*)-1)
             {
                 errno = ENOMEM;
                 return NULL;
             }
-
+            printf("we will prepare new page now...\n");
             updateHeader();
+            printf("finished running update header\n");
             setEpilogue();
-            setEpilogueFooter(freeBlockHeader);
+            printf("finished running set epilogue\n");
+            setEpilogueFooter(&(freelist_head->header));
+            printf("finished running set epilogue footer\n");
+            printf("WE ARE GOING TO LOOP BACK AFTER ADDING MORE ROOM\n");
             
         }
 
-        printf("no we will split and prep the block to be returned\n");
-        return splitAndPrepFreeBlock(size,(ics_header*)freeBlockHeader);
+        // printf("no we will split and prep the block to be returned\n");
+        void* retVal = splitAndPrepFreeBlock(size,(ics_header*)freeBlockHeader);
+        // ics_header_print(retVal);
+        return retVal;
 
     }
         // ics_free_header* freeBlockHeader = (ics_free_header*)getNextFit(size, &freelist_head, &freelist_next);
@@ -161,6 +185,11 @@ void *ics_malloc(size_t size)
  * requested_size is identical in the header and footer.
  */
 int ics_free(void *ptr) { 
+
+
+
+
+
     return -99999;
 }
 
